@@ -29,3 +29,17 @@ workspace. Read `README.md` and `docs/Bootstrap.md` before setup or updates.
   `npm test` for its focused tests; no third-party dependencies are required.
   Keep the AI proposal step tool-free and filesystem writes confined to the
   command's own note. Document command registration in `docs/Note.md`.
+
+## Agent tab titles
+
+For terminal agents such as Copilot or Claude, actively keep the current tab's
+title aligned with the chat's active topic. Update it at task start and meaningful
+topic changes, not on every message.
+Read `herdr-app --skill` and `hc --skill`, then inspect `herdr-app ls` and
+`herdr-app status`. Map the current terminal ID to its exact tab before renaming;
+never infer the target from window focus or `TERM_PROGRAM` alone.
+Use a short topic description for default or agent-managed titles, including
+titles set earlier in the conversation. Preserve explicit user-chosen titles
+unless asked to change them, and leave unrelated tabs alone.
+Other layout changes require a request. Never restart the person's app/core or
+close unrelated work.

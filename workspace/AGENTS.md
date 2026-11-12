@@ -87,9 +87,13 @@ attempted, blocked and completed work are distinct.
 
 Read `herdr-app --skill` for UI commands and `hc --skill` for terminals. Inspect
 `herdr-app ls` and `status` before acting; do not infer the host from
-`TERM_PROGRAM` alone. At task start, map the current terminal ID to its tab and
-rename only an identified default title to a short task description, preserving
-custom titles and unrelated tabs. Other layout changes require a request.
+`TERM_PROGRAM` alone. For terminal agents such as Copilot or Claude, actively
+keep the current tab's title aligned with the chat's active topic. At task start
+and meaningful topic changes, map the current terminal ID to its exact tab and
+use a short topic description for default or agent-managed titles, including
+titles set earlier in the conversation. Do not rename on every message.
+Preserve explicit user-chosen titles unless asked to change them, and leave
+unrelated tabs alone. Other layout changes require a request.
 Never restart the person's app/core or close unrelated work.
 Project layouts are declarative recipes in PROJECT.md's Workspace state section.
 Name new spaces with the exact dated project slug. The first tab has a
