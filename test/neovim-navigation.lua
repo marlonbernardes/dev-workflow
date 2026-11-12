@@ -100,6 +100,22 @@ local ok, err = xpcall(function()
   local tree = require("neo-tree.sources.manager").get_state("filesystem")
   assert(vim.fs.normalize(tree.path) == vim.fs.normalize(vault), "Neo-tree root changed to the project")
   assert(vim.fs.normalize(vim.fn.getcwd()) == vim.fs.normalize(vault), "Neovim changed the workspace directory")
+  local watched_file = path("watcher-check.md")
+  local fd = assert(vim.uv.fs_open(watched_file, "w", 420))
+  assert(vim.uv.fs_close(fd))
+  local function tree_contains_watched_file()
+    for _, node in ipairs(tree.tree:get_nodes(tree.path)) do
+      if vim.fs.normalize(node:get_id()) == vim.fs.normalize(watched_file) then
+        return true
+      end
+    end
+    return false
+  end
+  assert(vim.wait(10000, tree_contains_watched_file), "Neo-tree did not detect external file creation")
+  assert(vim.uv.fs_unlink(watched_file))
+  assert(vim.wait(10000, function()
+    return not tree_contains_watched_file()
+  end), "Neo-tree did not detect external file deletion")
   assert(vim.v.errmsg == "", vim.v.errmsg)
 end, debug.traceback)
 
@@ -108,6 +124,6 @@ if not ok then
   vim.api.nvim_err_writeln(err)
   vim.cmd("cquit 1")
 else
-  print("PASS: wiki navigation and metadata preserved; project focused in Neo-tree with workspace root and cwd unchanged")
+  print("PASS: wiki navigation and metadata preserved; project focused with root and cwd unchanged; Neo-tree detected file creation and deletion")
   vim.cmd("qa!")
 end
