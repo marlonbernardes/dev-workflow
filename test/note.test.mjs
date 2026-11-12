@@ -35,6 +35,8 @@ test("parses quoted transcripts and file input without interpreting shell syntax
   assert.throws(() => parseArgs(["--file", "file.txt", "speech"]), /not both/);
   assert.throws(() => parseArgs(["--unknown"]), /Unknown option/);
   assert.throws(() => parseArgs([]), /required/);
+  assert.equal(parseArgs(["--harness", "claude", "speech"]).harness, "claude");
+  assert.throws(() => parseArgs(["--harness", "other", "speech"]), /Harness/);
 });
 
 test("resolves the private workspace from descendants, or an explicit path", async (t) => {
@@ -210,6 +212,7 @@ test("retains drafts on quit, EOF and interrupts, reporting their actual paths",
       },
       generate: async () => JSON.stringify(proposal()),
     });
+
     if (answer === "interrupt") {
       await assert.rejects(job, /Cancelled/);
     } else {
@@ -219,6 +222,18 @@ test("retains drafts on quit, EOF and interrupts, reporting their actual paths",
     assert.ok(kept);
     assert.match(await readFile(kept.slice("Note kept at: ".length), "utf8"), /confirmed observation/);
   }
+});
+
+test("note forwards the selected harness to the shared adapter", async (t) => {
+  const root = await fixture(t);
+  await runNote({
+    root, transcript: "Speech", harness: "claude",
+    ask: async () => "yes", report() {},
+    generate: async (prompt, options) => {
+      assert.equal(options.harness, "claude");
+      return JSON.stringify(proposal());
+    },
+  });
 });
 
 test("does not call AI again for 'no' followed by blank feedback", async (t) => {

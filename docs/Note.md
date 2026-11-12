@@ -4,13 +4,14 @@
 note "A big speech-to-text transcript..."
 note --workspace <your-private-workspace> "Another idea..."
 note --file transcript.txt
+note --harness claude "Use the same workflow with Claude Code..."
 ```
 
 ## Flow
 
 1. The command resolves your private notes workspace, reads its agent instructions
    and conventions, and searches existing note titles, aliases and content locally.
-2. Copilot receives the transcript, those instructions, available destinations
+2. The selected AI receives the transcript, those instructions, available destinations
    and up to 50 ranked existing-note metadata entries, but not existing note
    bodies. It proposes JSON containing a title, note_type, body, directory and
    explanation. Categories are note, decision, research, investigation, guide
@@ -34,16 +35,20 @@ workspace updates.
 
 ## Install on Windows or macOS
 
-Requires Node.js 22+ with npm, plus an authenticated GitHub Copilot CLI.
+Requires Node.js 22+ with npm, plus an authenticated Copilot CLI or Claude Code.
+Select `--harness copilot|claude`, otherwise `AI_HARNESS`, then `copilot`.
 Ask before installing tools. Use the current official Node.js LTS installer
 or an already-approved version manager; do not install another Node copy if an
 appropriate one is already available.
 
-On Windows install the official standalone Copilot CLI so `copilot.exe` resolves
-on PATH. On macOS the command invokes `copilot` directly, without a shell.
-Authenticate using `copilot login` if needed. The current CLI must support
+On Windows the selected standalone `copilot.exe` or `claude.exe` must resolve
+on PATH. Elsewhere the selected command is invoked directly, without a shell.
+Authenticate using the selected CLI's normal login flow. Copilot must support
 stdin prompts, `--output-format json` and `--available-tools`; this integration
 was verified with Copilot CLI 1.0.109.
+Claude must support print/JSON mode, `--tools`, strict MCP configuration and
+setting-source restrictions described in [Harnesses](Harnesses.md).
+The Claude adapter is covered by deterministic contract tests, not a live check.
 
 In the dev-workflow checkout, inspect for conflicts and ask before registering:
 
@@ -61,7 +66,7 @@ These are terminal commands, not a script to paste without review. If PowerShell
 blocks npm's `.ps1` launcher, use the installed `npm.cmd` executable instead;
 do not bypass execution policy.
 
-`npm link` creates platform-appropriate command shims linked to this checkout.
+`npm link` creates platform-appropriate `note` and `aic` command shims linked to this checkout.
 It downloads no dependencies. Keep the checkout in place; shared updates take
 effect for this command without copying its source into the private workspace.
 Review changes before pulling or running updated code.
@@ -98,18 +103,19 @@ command keeps an unaccepted draft rather than hanging or claiming acceptance.
 
 ## Data and write boundaries
 
-- The transcript and generated note go to your configured Copilot AI service
+- The transcript and generated note go to your selected AI service
   and can be retained in CLI session history/logs according to its settings.
   Do not submit secrets or content your organization prohibits sending.
 - Only note metadata from other notes is sent, not their full contents. Local
   searches skip links and hidden files and stop at 2000 notes with an explicit
   error rather than silently ignoring a larger collection.
-- Copilot runs from an empty temporary working directory with custom
-  instructions and automatic plugin discovery disabled. The model's explicit
-  nonmatching tool whitelist exposes no tools; an empty whitelist would select
-  the CLI defaults. Machine-readable events preserve JSON without terminal
-  wrapping. Existing user/admin CLI configuration and policies still apply;
-  this is not an OS sandbox or a bypass for configured hooks.
+- The AI runs from an empty temporary working directory with no proposal tools.
+  Copilot disables custom instructions and automatic plugin discovery and uses
+  an explicit nonmatching tool whitelist (an empty list would select defaults).
+  Claude uses an empty tool list, strict empty MCP config, no file-based settings
+  and disabled hooks. Machine-readable output preserves unwrapped JSON.
+  Existing managed CLI policies still apply; this is not an OS sandbox.
+  See [Harnesses](Harnesses.md) for the adapter boundaries.
 - The script rejects unapproved paths, directory traversal, links/junctions and
   invalid filenames. It uses exclusive creation, adding a suffix on collisions
   rather than replacing another note.
