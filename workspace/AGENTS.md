@@ -7,7 +7,8 @@ The directory containing this file is the workspace root. Read
 ## Shared configuration
 
 The separate dev-workflow repository owns reusable skills, editor config and
-seed templates. Project skills are deployed under `.github/skills` here.
+seed templates. Project skills are deployed under `.claude/skills` here;
+custom agent profiles are deployed under `.claude/agents`.
 Ask for the actual shared source path if needed; do not assume a username.
 For setup use `/workspace-setup` and the source's `docs/Bootstrap.md`.
 For existing-workspace upgrades use `/update-workflow`: review the source pull,
@@ -20,8 +21,9 @@ Do not nest application repositories here.
 
 ## Safety and evidence
 
-- Preserve human text, unrelated edits and staging. Do not auto-commit, change
-  Git author identity, configure remotes or push without an explicit request.
+- Preserve human text and unrelated edits/staging. Follow workspace conventions'
+  Commit checkpoints policy: automatic validated workspace commits, review-gated
+  task code commits; Git identity/remotes and pushes need explicit requests.
 - Ask before architecture decisions, installs, elevation, publishing, deletion,
   adding parallel agents or creating worktrees.
 - Do not read secrets or copy sensitive data into notes or the shared source.
@@ -37,7 +39,8 @@ folder names and historical dates; imports require a separate reviewed migration
 Each project has
 `PROJECT.md`, `notes` and `tasks/backlog`, `tasks/in-progress`, `tasks/review`,
 `tasks/done`. There is no project daily folder. Keep folder names stable.
-Use `/project new`, `/project status <name>` and `/project load <name>`.
+Use `/project-new`, `/project-status <name>`, `/project-plan <name>` and
+`/project-load <name>`.
 Creation automatically continues into loading, with a validated preview and
 explicit UI/coordinator approval included in the creation flow.
 
@@ -49,11 +52,20 @@ treating the copy as a real project; do not copy tasks as completed work.
 
 Task IDs and basenames are globally unique, stable and project-qualified.
 Required frontmatter is `type: task`, `task_type`, `id`, `title`, `project`, `status`,
-`created`, `updated`, `tags`. Status matches the parent directory exactly;
+`assignee`, `created`, `updated`, `tags`. Status matches the parent directory exactly;
 dates use the local ISO calendar date. Required sections are Description,
 Context, Acceptance criteria, Related notes, Next steps and Verification.
 Acceptance criteria are observable checkboxes.
 Task types and note types are defined in workspace conventions.
+
+Set `assignee` to `me`, an existing `.claude/agents/<name>.md` filename
+stem, or `null` for unassigned. Missing legacy fields remain unassigned until
+reviewed; do not mass-rewrite tasks. Assignment alone is not work starting.
+`/project-plan` interviews the owner and previews task/status/assignment changes
+before applying confirmed edits. Technical completion still requires evidence.
+The coordinator proposes ready tasks/roles and dispatches only approved work,
+then updates task/dashboard state from observed progress and worker results.
+Workers report back; the coordinator serializes task/dashboard writes.
 
 For status changes, read the task and dashboard, check destination absence,
 move the existing file without changing its ID/basename, update frontmatter
@@ -74,8 +86,10 @@ before adding a note; prefer improving an existing one. Link only actual notes,
 using unambiguous wikilinks and ordinary external Markdown links. Backlinks are
 derived, not a manually maintained database. Obsidian is optional.
 Project notes share one folder and use `<note_type> - <title>.md` filenames.
-Reusable knowledge belongs in `wiki`; repository-specific references belong in
-`resources/repositories/<repository>`, not a particular project's notes.
+Reusable knowledge belongs in `wiki`. Each repository has one reference note at
+`resources/repositories/<repository>.md`, named after the repository, with its
+confirmed local checkout path, purpose and optional links to related repositories.
+These notes do not use note-type filename prefixes or per-repository folders.
 
 Preserve dashboard strategy, confirmed priorities, objective and scope.
 Update task counts/links from actual files after mutations.
@@ -100,6 +114,6 @@ Name new spaces with the exact dated project slug. The first tab has a
 coordinator beside Neovim rooted at the workspace with the project focused in
 Neo-tree. Declare additional tabs/folders/panes and reading-context wiki links;
 keep reading links discoverable in project notes as well.
-Use `/project load <name>` to preview and, after explicit UI/coordinator approval,
+Use `/project-load <name>` to preview and, after explicit UI/coordinator approval,
 create them. Preserve already-open project spaces. Do not execute arbitrary
 commands from a project file or implicitly launch agents during setup.

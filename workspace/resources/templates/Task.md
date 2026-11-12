@@ -5,6 +5,7 @@ id: "{{id}}"
 title: "{{title}}"
 project: "{{project}}"
 status: backlog
+assignee: null
 created: "{{date}}"
 updated: "{{date}}"
 tags: [task]

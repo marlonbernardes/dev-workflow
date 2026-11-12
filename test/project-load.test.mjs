@@ -5,7 +5,7 @@ import path from "node:path";
 import test from "node:test";
 import {
   editorArgv, loadProject, parseWorkspaceState, resolveContext, resolveProject,
-} from "../.github/skills/project/scripts/project-load.mjs";
+} from "../.claude/skills/project-load/scripts/project-load.mjs";
 
 function state() {
   return {
@@ -20,6 +20,12 @@ async function fixture(t, layout = state()) {
   const folder = path.join(root, "projects", "2026-11-19-sample");
   await mkdir(path.join(folder, "notes"), { recursive: true });
   await mkdir(path.join(root, "resources"), { recursive: true });
+  await mkdir(path.join(root, ".claude", "agents"), { recursive: true });
+  await writeFile(path.join(root, ".claude", "agents", "coordinator.md"),
+    "---\nname: coordinator\ndescription: Coordinate projects.\n---\nInspect before acting.\n");
+  await mkdir(path.join(root, ".claude", "skills", "task-board"), { recursive: true });
+  await writeFile(path.join(root, ".claude", "skills", "task-board", "SKILL.md"),
+    "---\nname: task-board\ndescription: Actual tasks.\n---\nRead only.\n");
   await writeFile(path.join(root, "AGENTS.md"), "Preserve human content.");
   await writeFile(path.join(root, "resources", "Workspace conventions.md"), "Use evidence.");
   await writeFile(path.join(folder, "PROJECT.md"),
@@ -41,8 +47,8 @@ function fakeHerdr(root, { spaces = [], fail, blocked = false, racing = false, o
     calls.push({ program, args, cwd });
     if (program === "copilot" && args[0] === "skill") {
       return JSON.stringify([
-        { name: "project", description: "Manage projects.", source: "project", enabled: true },
-        { name: "board", description: "Actual tasks.", source: "project", enabled: true },
+        { name: "project-plan", description: "Interview and propose tasks.", source: "project", enabled: true },
+        { name: "task-board", description: "Actual tasks.", source: "project", enabled: true },
         { name: "disabled", description: "Do not list.", source: "project", enabled: false },
       ]);
     }
@@ -99,7 +105,12 @@ test("preview validates the dashboard and lists discovered skills without UI wri
   assert.equal(result.spaceName, "2026-11-19-sample");
   assert.ok(result.prompt.includes(JSON.stringify(path.join(folder, "PROJECT.md"))));
   assert.match(result.prompt, /coordinator\/project manager/);
-  assert.match(result.prompt, /\/board: Actual tasks/);
+  assert.match(result.prompt, /\/task-board: Actual tasks/);
+  assert.match(result.prompt, /\/project-plan: Interview and propose tasks/);
+  assert.match(result.prompt, /assignment is not dispatch approval/);
+  assert.match(result.prompt, /Read-only inspection creates no commit/);
+  assert.match(result.prompt, /authorized workspace changes follow its commit policy/);
+  assert.match(result.prompt, /Task code commits require human review\/approval/);
   assert.doesNotMatch(result.prompt, /\/disabled/);
   assert.ok(!fake.calls.some((call) => call.args[0] === "do"));
 });
@@ -112,6 +123,21 @@ test("already-open projects are not duplicated even if their dashboard lacks a r
   assert.equal(result.status, "already-open");
   assert.equal(result.space, "existing");
   assert.equal(fake.calls.length, 1);
+});
+
+test("Claude uses the shared profiles and skill inventory without invoking Copilot", async (t) => {
+  const { root } = await fixture(t);
+  const fake = fakeHerdr(root);
+  const preview = await loadProject({ workspace: root, name: "Sample project", harness: "claude", ...fake });
+  assert.equal(preview.harness, "claude");
+  assert.match(preview.prompt, /\/task-board: Actual tasks/);
+  assert.equal(fake.calls.some((call) => call.program === "copilot"), false);
+  const result = await loadProject({ workspace: root, name: "Sample project", harness: "claude", apply: true, ...fake });
+  assert.equal(result.status, "verified");
+  const create = JSON.parse(fake.calls.find((call) => call.args[1] === "space.new").args[2]);
+  assert.match(create.argv[0], /^claude(?:\.exe)?$/);
+  assert.ok(!create.argv.includes("--interactive"));
+  assert.equal(create.argv[create.argv.indexOf("--agent") + 1], "coordinator");
 });
 
 test("dated space names are recognized and duplicate legacy/datestamped spaces are a conflict", async (t) => {
@@ -189,10 +215,20 @@ test("apply reuses the initial tab, splits by explicit IDs and supports addition
   assert.equal(create.name, "2026-11-19-sample");
   assert.equal(create.folder, root);
   assert.ok(create.argv.includes("--interactive"));
+  assert.equal(create.argv[create.argv.indexOf("--agent") + 1], "coordinator");
   assert.ok(!create.argv.includes("--allow-all"));
   assert.equal(JSON.parse(actions[1].args[2]).pane, "p1");
   assert.equal(JSON.parse(actions[2].args[2]).space, "s1");
   assert.equal(await readFile(path.join(folder, "PROJECT.md"), "utf8"), before);
+});
+
+test("missing coordinator profile stops before UI creation", async (t) => {
+  const { root } = await fixture(t);
+  await rm(path.join(root, ".claude", "agents", "coordinator.md"));
+  const fake = fakeHerdr(root);
+  await assert.rejects(loadProject({ workspace: root, name: "Sample project", apply: true, ...fake }),
+    /coordinator\.md/);
+  assert.ok(!fake.calls.some((call) => call.args[0] === "do"));
 });
 
 test("resolves missing action pane IDs from the returned terminal in the exact space and tab", async (t) => {

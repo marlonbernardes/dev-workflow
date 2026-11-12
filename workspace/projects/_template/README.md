@@ -5,7 +5,7 @@ This is a synthetic reference, not a project to start or complete.
 1. Choose a unique project slug without a leading underscore and an unused
    project-qualified task ID prefix. New projects use today's local date without
    asking; historical imports require a separate reviewed migration.
-2. Use `/project new` to create `YYYY-MM-DD-<slug>` and its dashboard from
+2. Use `/project-new` to create `YYYY-MM-DD-<slug>` and its dashboard from
    `resources/templates/Project.md`, or copy this folder's structure manually
    without overwriting existing files.
 3. Replace `_template`, `TEMPLATE`, `{{date}}`, titles and example text with

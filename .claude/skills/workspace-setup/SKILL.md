@@ -11,11 +11,13 @@ description: Set up or refresh a machine from dev-workflow using an AI-guided ch
    workspace exists, also read its `AGENTS.md` and conventions before editing.
 3. Execute the checklist in order. For an existing workspace's workflow upgrade,
    use `/update-workflow` instead; it reviews source changes and proposes
-   context-aware updates. Ask before installs, elevation, overwrites and Git changes.
+   context-aware updates. Ask before installs, elevation, overwrites and remote
+   changes; commits follow repository policy.
 4. Inspect existing config and skills; compare deployed copies with source.
    Merge approved changes instead of overwriting local work.
 5. Validate editor behavior and project skill discovery. Report exact observed
    checks and blockers; do not fabricate successful clean-machine testing.
 6. Preserve separate Git repositories. Keep the shared source connected to its
    upstream and personal notes connected only to the private workspace remote.
-   Do not commit, create hosted repositories or push without explicit requests.
+   Checkpoint validated source/workspace changes under their commit policies.
+   Do not create hosted repositories or push without explicit requests.

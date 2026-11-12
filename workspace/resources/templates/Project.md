@@ -29,10 +29,11 @@ Not started. Recompute task counts from the task directories.
 ## Relevant repositories
 
 Not configured.
+Link the single repository note at `resources/repositories/<repository>.md`.
 
 ## Workspace state
 
-Desired layout, not saved process state. `/project load` previews this recipe
+Desired layout, not saved process state. `/project-load` previews this recipe
 and requires approval before creating a space or starting its coordinator.
 Creation automatically includes that load flow. The space uses the dated project
 slug. The first editor keeps the workspace root with this project focused in

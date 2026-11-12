@@ -1,5 +1,5 @@
 ---
-name: complete-task
+name: task-complete
 description: Verify every acceptance criterion before moving a task to done; preserve incomplete tasks and report missing evidence.
 ---
 # Complete task
@@ -19,4 +19,5 @@ the workspace path if invoked in dev-workflow.
    and update status and today's local ISO date. Preserve other content.
 5. Verify exactly one copy, metadata/directory agreement, task links and actual
    dashboard counts. Repair partial moves immediately and report failures.
-6. Do not fabricate a daily completion entry or commit automatically.
+6. Do not fabricate a daily completion entry. Checkpoint validated workspace
+   changes under its commit policy; this does not authorize code commits.

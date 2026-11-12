@@ -1,5 +1,5 @@
 ---
-name: board
+name: task-board
 description: Report the private workspace task board from actual directories and frontmatter, without modifying files.
 ---
 # Task board
@@ -10,7 +10,9 @@ and conventions. Ask for the path if invoked in the shared dev-workflow repo.
 1. Enumerate `projects/*/tasks/{backlog,in-progress,review,done}` and read actual
    task metadata. Exclude project directories starting with `_` (templates and
    examples). Group by project and directory status.
-2. Report counts and concise ID/title links for each status. Cite actual task
+2. Report counts, assignees and concise ID/title links for each status. Resolve
+   named assignees against `.claude/agents`; flag unknown names and missing
+   legacy fields without assigning them. Cite actual task
    paths; do not treat dashboard counts as the source of truth.
 3. Detect duplicate IDs/copies, missing required metadata and status-directory
    mismatches. Report malformed files separately instead of omitting them.

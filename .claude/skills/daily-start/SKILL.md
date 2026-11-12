@@ -18,4 +18,4 @@ in dev-workflow, ask for the private workspace path before writing anything.
 4. Record only confirmed context and label proposed plans. Do not move tasks,
    start agents, create worktrees, invent yesterday's work or mark tasks done.
 5. Link existing tasks using unique basenames. Verify the date and log path;
-   do not auto-commit.
+   checkpoint changed files under the workspace commit policy.

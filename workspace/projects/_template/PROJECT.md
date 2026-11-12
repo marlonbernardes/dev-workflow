@@ -55,7 +55,7 @@ No actual project has been defined. All sample task criteria remain unchecked.
 ## Relevant repositories
 
 Not configured. Replace with confirmed repository links; do not nest Git repos.
-Repository references belong in `resources/repositories/<repository>`.
+Link the single repository note at `resources/repositories/<repository>.md`.
 
 ## Workspace state
 

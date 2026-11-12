@@ -21,7 +21,7 @@ a file existing.
 - Existing local work is not a disposable template. Never delete `.git`,
   run a hard reset or replace an existing directory to get a "clean" setup.
 
-If Git or Copilot is missing, a person must install/authorize them using current
+If Git or the chosen AI CLI is missing, a person must install/authorize them using current
 official instructions before those tools can run this checklist. An AI agent
 cannot bootstrap its own unavailable runtime. The agent can handle later steps.
 
@@ -46,7 +46,7 @@ Verify `rg --version` in the terminal that will launch Neovim, not only inside
 an agent's tool environment. Restart the terminal host if it still has an old
 PATH after installation.
 
-Install Herdr app/core and Copilot CLI only if needed and approved; consult
+Install Herdr app/core and the selected Copilot CLI or Claude Code only if needed and approved; consult
 their current official install instructions rather than guessing package IDs.
 Obsidian is optional for graphical vault and wiki-link navigation.
 Do not install Basalt, standalone Vim, Vundle, a separate Neovim package manager
@@ -66,7 +66,7 @@ do not run Windows install commands there.
 - Keep configuration and lockfile together. A local deployment edit is not an
   automatic edit of the shared source.
 - Start Neovim and approve the packages in `vim.pack`: Catppuccin, Neo-tree,
-  plenary, nui, render-markdown and obsidian.nvim. Do not bypass the install
+  plenary, nui, render-markdown, obsidian.nvim and Gitsigns. Do not bypass the install
   confirmation.
 - Default theme is Catppuccin Mocha. There is no dependency on the old `.vimrc`.
 - Obsidian-style navigation uses obsidian.nvim in `~/work`, or the directory
@@ -109,35 +109,47 @@ missing directories during setup. Do not create fake completed tasks or sample
 projects in a user's real backlog.
 Keep application source repositories outside both repositories.
 
-## 5. Deploy project-local skills
+## 5. Deploy project-local skills and agents
 
-- Source: `.github/skills` in this repository.
-- Destination: `.github/skills` in the private workspace.
+- Source: `.claude/skills` in this repository.
+- Destination: `.claude/skills` in the private workspace.
 - Review existing skills with the same names, including `.agents/skills`,
-  `.claude/skills` and personal skill locations. Do not erase unrelated skills
+  legacy `.github/skills` and personal skill locations. Do not erase unrelated skills
   or add duplicate personal copies.
 - Copy each absent skill directory, including its `SKILL.md` and reference
-  assets, and approved updates under `<workspace>\.github\skills\<name>`.
-  Deploy the complete `project` skill, including `scripts/project-load.mjs` and
+  assets, and approved updates under `<workspace>\.claude\skills\<name>`.
+  Deploy `project-new`, `project-load`, `project-status` and `project-plan`.
+  The complete `project-load` skill includes `scripts/project-load.mjs` and
   `references/Project-workspace.md`. Keep files versioned in the private
   workspace. Merge conflicts instead of replacing that whole directory.
-  On upgrades, review removal of obsolete new-project, project-status and
-  save/restore skill copies; do not silently delete local customizations.
-- Run `copilot skill list --json` from the workspace. In an existing interactive
+  On upgrades, review removal of the obsolete `project` dispatcher, `new-project`
+  and save/restore skill copies; compare any pre-existing `project-status`
+  customization before merging. Do not silently delete local customizations.
+- Source agent profiles: `.claude/agents`. Deploy reviewed profiles to
+  `<workspace>/.claude/agents`, including `coordinator.md`,
+  `researcher.md` and `verifier.md`. Preserve
+  unrelated agents; keep the filename stem and frontmatter `name` consistent.
+  Do not duplicate these as personal-global profiles or launch agents as a check.
+- Follow `docs/Harnesses.md` for reviewed legacy `.github` migration, duplicate
+  removal and the `workspace/CLAUDE.md` instruction bridge. Deploy it alongside
+  the private workspace's `AGENTS.md`, preserving existing Claude instructions.
+- For Copilot run `copilot skill list --json` from the workspace. In an existing interactive
   session use `/skills reload`; verify skill names, descriptions and project
   paths. No `~/.copilot/skills` registration is needed.
+  For Claude restart the session and inspect `/skills` and `/agents` instead.
+  Do not install a second harness just to validate the selected one.
 - If an agent sees task skills in this shared source repo, it must ask for the
   actual private workspace path before writing tasks or logs.
 - Project layouts live in each private project's `PROJECT.md` Workspace state
   section. Do not create live layouts or launch coordinators during setup.
-  `/project load` requires a preview and approval for UI changes and Copilot.
+  `/project-load` requires a preview and approval for UI changes and the chosen AI coordinator.
   Preserve legacy private snapshots; removing their old skills does not
   authorize deleting private state files.
 
-## 6. Register the Note command
+## 6. Register the Note and Aic commands
 
 Follow `docs/Note.md` after the private workspace exists. Inspect `node --version`,
-`npm --version`, `copilot --version`, existing `note` commands and npm's global
+`npm --version`, the selected CLI's `--version`, existing `note`/`aic` commands and npm's global
 prefix first. Require Node.js 22+; ask before installing missing tools.
 
 Ask before running `npm link --offline --ignore-scripts --no-audit --no-fund`
@@ -146,10 +158,13 @@ dependencies to download. Do not publish it to npm or use administrator access
 to work around a prefix permission error. The source checkout must remain in
 place for the linked command.
 
-Check `note --help` and `npm test`. Real generation uses the user's Copilot
+Check `note --help`, `aic --help` and `npm test`. See `docs/Aic.md` for its
+staged-first scope and safety limits. Select `--harness copilot|claude` or set
+`AI_HARNESS`. Real generation uses the selected AI
 account and consumes AI credits; use only approved synthetic content for a smoke
-test, and keep it outside real notes. On Windows the standalone `copilot.exe`
-must be on PATH. On macOS `copilot` must be on PATH.
+test, and keep it outside real notes/repositories. On Windows the selected
+standalone `copilot.exe` or `claude.exe` must be on PATH; elsewhere use the
+selected command on PATH. Registration is shared; no extra package is required.
 
 The command defaults to the current private workspace or `~/work`; pass
 `--workspace` or set `NOTE_WORKSPACE` for another location. It never writes
@@ -163,6 +178,15 @@ notes into the shared dev-workflow repository.
 - Space, e opens/closes Neo-tree; it reveals the current file.
 - Ctrl+h/j/k/l move focus between sidebar and editor splits.
 - Space, w saves; Space, q closes the current window.
+- Gitsigns shows changed-line markers in tracked Git files. `]c` / `[c` jump
+  between hunks, preserving native navigation in diff windows.
+  Space, g, p previews a hunk; Space, g, d compares the buffer with the index;
+  Space, g, D compares with HEAD. Close the comparison pane with `:q`.
+  Space, g, b shows line blame. Space, t, b toggles inline blame;
+  Space, t, w toggles word-level highlighting.
+  Space, g, s stages/unstages a hunk; Space, g, r discards its changes.
+  Both also work on selected lines in Visual mode. Discard is destructive;
+  verify these actions only on synthetic files, never personal changes.
 - In a workspace Markdown note, put the cursor on a `[[Note Name]]` or
   `[[path/to/note|label]]` link and press Enter in normal mode to follow it.
   Ctrl+o goes back; Ctrl+i goes forward. `]o` / `[o` move to the next / previous
@@ -173,7 +197,7 @@ notes into the shared dev-workflow repository.
 - Use `:checkhealth render-markdown` and `:checkhealth neo-tree`. Report optional
   font/icon/parser warnings accurately rather than calling every warning a
   failure or hiding actual errors.
-- Confirm `/board` reads actual task files without modifying them. Verify
+- Confirm `/task-board` reads actual task files without modifying them. Verify
   templates and all skill paths from the private workspace.
 - Wiki-link resolution comes from obsidian.nvim, not Markdown rendering or
   Neo-tree. Verify basename, vault-relative and aliased links, jump-back, and
@@ -185,10 +209,13 @@ notes, and exits nonzero on failure:
 
 ```powershell
 nvim --headless -u NONE -i NONE -c "luafile test\neovim-navigation.lua"
+nvim --headless -u NONE -i NONE -c "luafile test\neovim-gitsigns.lua"
 ```
 
 Set `NVIM_TEST_CONFIG` to an absolute `init.lua` path to test a deployed copy
 instead of the source configuration.
+The Gitsigns check uses a temporary Git repository and index without making
+commits; it verifies attachment, navigation, preview, diff, staging and discard.
 
 Keep any smoke-test files temporary and outside real project tasks, and remove
 only specifically identified test artifacts. Do not close the person's editors.
@@ -213,11 +240,12 @@ Substitute actual approved directories if different.
 - If either directory has no Git repository, ask before initialization. If
   a remote is absent or wrong, show the proposed change and ask before adding,
   removing or replacing it. Do not delete history to change the destination.
-- Do not change author identity. If commits are requested and identity is
-  missing, stop for the user to configure it.
-- Publishing the shared source, creating the private GitHub repo, committing
-  and pushing are separate explicit approvals. Review staged and unstaged
-  changes for private content before any publication.
+- Follow README's Commit checkpoints policy for automatic validated commits in
+  source/workspace, preserving unrelated edits/staging. Missing identity or
+  unclear initial snapshot scope blocks the commit; do not change author identity.
+- Task code commits require review/approval. Publishing, hosted repository
+  creation, remote changes and pushes still need explicit requests. Review
+  staged/unstaged changes for private content before publication.
 
 ## 9. Report and maintain
 

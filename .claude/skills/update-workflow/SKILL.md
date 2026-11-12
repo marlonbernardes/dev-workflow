@@ -33,10 +33,12 @@ what actually changed before deciding which actions are needed.
 
 ## 2. Pull and understand the source changes
 
-- Record the source HEAD as `before`. Show the source path, branch and upstream,
-  then obtain approval for `git -C "<source>" pull --ff-only` unless the user
-  explicitly authorized that pull already. Do not pull the private workspace.
-- Run the approved fast-forward-only pull. On failure or divergence, stop and
+- Record the source HEAD as `before`. Show the source path, branch and upstream.
+  Invoking this skill authorizes `git -C "<source>" pull --ff-only`; do not ask
+  for pull approval again. This authorization covers only the source pull, not
+  deployment overwrites, migrations, installs or other changes requiring approval.
+  Do not pull the private workspace.
+- Run the fast-forward-only pull. On failure or divergence, stop and
   report it; do not retry with merge, rebase, force or a different remote.
   Record the resulting HEAD as `after` and re-read any changed source guidance.
 - Review `git log --oneline <before>..<after>`,
@@ -52,11 +54,16 @@ what actually changed before deciding which actions are needed.
 
 ## 3. Propose the upgrade
 
-- Map source intent to real destinations: `.github/skills` to the workspace's
-  project skills, `workspace/AGENTS.md` to its instructions, workspace conventions
+- Map source intent to real destinations: `.claude/skills` to the workspace's
+  project skills, `.claude/agents` to its custom agent profiles,
+  `workspace/AGENTS.md` to its instructions, workspace conventions
   and templates to their counterparts, and editor/tool changes to this OS's
   actual configuration and installed tools. Never deploy the source repository's
   own `AGENTS.md` as workspace instructions.
+- Follow `docs/Harnesses.md` for migration from legacy `.github` skill/profile
+  copies. Deploy the `CLAUDE.md` bridge after review. Compare duplicate skill
+  names and agent bodies before proposing their explicit removal; never leave
+  conflicting active copies or erase local customizations.
 - Compare before editing. When available, use the old source file at `before`,
   its new version at `after` and the current destination to distinguish shared
   changes from local customization. The old source revision is not proof of
@@ -85,8 +92,10 @@ what actually changed before deciding which actions are needed.
   configuration; preserve unrelated files and staging. Do not replace whole
   directories, use symlinks or silently remove obsolete destination files.
 - Deploy complete skill directories, including reference assets and scripts.
-  The project skill replaces new-project/project-status and the old save/restore
-  skills. Propose removal of obsolete deployed copies explicitly; never delete
+  The separate project-new/project-load/project-status/project-plan skills
+  replace the project dispatcher. Deploy reviewed `.claude/agents` profiles,
+  including the coordinator used by project-load. Propose removal of obsolete
+  deployed copies explicitly; never delete
   a locally customized skill or private state file without approval.
   If updating this skill, finish using the approved plan; the newly deployed
   text does not authorize additional operations in the current run.
@@ -99,7 +108,7 @@ what actually changed before deciding which actions are needed.
   and reconcile dashboards from actual task files. Never infer completion or
   invent missing project decisions to satisfy a new template.
 - Never load project UI, rewrite legacy `.workflow-state` snapshots,
-  close editors, launch agents, alter Git identity/remotes, commit or push as an
+  close editors, launch agents, alter Git identity/remotes or push as an
   implicit upgrade step. Those actions need their own explicit requests and
   applicable safeguards.
 
@@ -113,6 +122,8 @@ what actually changed before deciding which actions are needed.
   and verify expected names, descriptions and project paths. Tell the user to
   use `/skills reload` in existing sessions. Do not claim discovery from the
   source repository proves deployment to the workspace.
+  If using Claude, restart and inspect `/skills` and `/agents` instead; do not
+  require Copilot installation. Report checks unavailable on this machine.
 - For editor changes, run the source's headless Neovim checks against the actual
   deployed config and verify affected behavior. For Note changes, run `npm test`
   in the source and verify the registered command as described in `docs/Note.md`;
@@ -124,5 +135,9 @@ what actually changed before deciding which actions are needed.
 - Stop on errors and report partial application with exact affected paths and
   recovery options; never undo pre-existing work or hide failed checks. Report
   the source revision range, applied/skipped/blocked items and observed checks.
-  No success claim for untested behavior, no automatic changelog or machine
-  record in the shared source, and no commits or pushes in either repository.
+  No success claim for untested behavior or automatic changelog/machine record
+  in the shared source.
+- Checkpoint validated deployment changes under the workspace commit policy;
+  separately approved source edits follow source policy. An unchanged run or
+  pull alone creates no commit. Never commit to make a dirty source pull possible
+  or push either repository.

@@ -1,11 +1,13 @@
 # Repository references
 
-Keep documents about one repository in `resources/repositories/<repository>/`.
-Several projects can link to the same reference rather than duplicate it.
-Application source checkouts stay outside this workspace.
+Keep one Markdown note per repository directly in this folder, named
+`<repository>.md`. Do not create per-repository subfolders or add note-type
+filename prefixes. Several projects can link to the same note.
 
-Suggested content: a repository overview, architecture guide, local development
-instructions, approved review prompts and links to canonical upstream docs.
-Use note-type filename prefixes and verify commands before claiming they work.
+Record the confirmed local checkout path, repository purpose and optional wiki
+links to other existing repository notes. Use
+[the repository template](../templates/Repository.md).
 
-The `_template` folder is a synthetic example, not a configured source checkout.
+Project-specific implementation and verification context belongs in project
+notes; reusable guidance belongs in wiki. Application source checkouts stay
+outside this workspace.

@@ -10,15 +10,19 @@ workflow source's remote. Use the same private repository across your machines.
 1. Read `AGENTS.md` and `resources/Workspace conventions.md`.
 2. Follow `docs/Bootstrap.md` in your separate dev-workflow checkout when
    configuring a machine or refreshing shared configuration.
-3. Run `copilot` here. Project skills live in `.github/skills`; use
-   `/skills reload` in an existing session after their approved deployment.
-4. Use `/project new`, `/new-task`, `/board`, `/daily-start` and `/wrap-up`.
-   `/start-task`, `/complete-task` and `/project status <name>` manage existing work.
+3. Run `copilot` or `claude` here. Both read `.claude/skills` and `.claude/agents`.
+   After approved deployment, use `/skills reload` in Copilot or restart Claude.
+   `CLAUDE.md` imports the authoritative `AGENTS.md`.
+4. Use `/project-new`, `/task-new`, `/task-board`, `/daily-start` and `/wrap-up`.
+   `/project-status <name>` reports state; `/project-plan <name>` interviews you
+   and proposes task/status/assignment changes before applying confirmed edits.
+   `/task-start` and `/task-complete` manage existing work.
 
 Run `/update-workflow` here to pull approved changes from the separate shared
 source and review an AI-proposed upgrade for this workspace and machine.
 It preserves local customization and asks before applying file changes,
-migrating project structure or installing tools; it does not commit or push.
+migrating project structure or installing tools. Validated deployment changes
+are committed locally; pushes still need an explicit request.
 
 Neovim is the supported terminal editor. Space, e toggles Neo-tree; Space, m
 toggles Markdown rendering; Ctrl+h/j/k/l move between editor windows.
@@ -30,17 +34,29 @@ cancelling keeps the latest draft. See `docs/Note.md` in the shared source.
 
 ## Load a project in Herdr
 
-Use `/project load <name>` to check for an already-open project space. If none
+Use `/project-load <name>` to check for an already-open project space. If none
 exists, preview the desired layout from `PROJECT.md` and approve creation of
-its tabs/panes and interactive Copilot coordinator. By default, the coordinator
+its tabs/panes and interactive AI coordinator. Select the harness with
+`--harness copilot|claude` on the loader, or `AI_HARNESS` (default: `copilot`).
+By default, the coordinator
 opens beside Neovim with the dashboard loaded, both in this workspace.
 It reads the project, reports actual task state and lists available project
 skills; it does not start implementation or other agents on its own.
 
 The Workspace state section is a declarative recipe, not a process backup.
-See `.github/skills/project/references/Project-workspace.md` after deployment.
-`/project` accepts `new`, `status` and `load` arguments; custom subcommand
-autocomplete is not documented by this CLI build.
+See `.claude/skills/project-load/references/Project-workspace.md` after deployment.
+The separate project skills replace the old `/project` subcommands.
+
+## Task ownership and agents
+
+Set `assignee` to `me`, an existing agent profile name, or `null` for unassigned.
+Profiles live in `.claude/agents/<name>.md`. Supplied roles are `coordinator`,
+`researcher` and `verifier`; additional roles such as `pr-reviewer` or `game-dev`
+need their own reviewed definitions. The loader selects the coordinator for new
+project spaces.
+It proposes ready tasks and assignments, dispatches approved work and reconciles
+task/dashboard status from worker reports and acceptance evidence. Assignment
+alone does not launch work or mark it in-progress.
 
 ## Layout
 
@@ -62,13 +78,19 @@ Top-level `_example.md` notes illustrate placement and are not dated daily logs.
 | `wiki/people` | Optional non-sensitive collaboration guidance |
 | `daily` | Lightweight local-date daily logs |
 | `resources/templates` | Markdown templates |
-| `resources/repositories/<repository>` | Shared reference documents about one source repository |
-| `.github/skills` | Deployed, versioned project skills |
+| `resources/repositories/<repository>.md` | One note per repository: local checkout path, purpose and optional related-repository links |
+| `.claude/skills` | Deployed, versioned project skills |
+| `.claude/agents` | Deployed custom agent profiles |
 | `inbox` and `archive` | Unprocessed and inactive material |
 
 Example notes and `.gitkeep` files preserve the seed's directory layout in Git.
 Application source repositories should live outside this notes repository.
 
 Shared skill/convention edits should be ported back to dev-workflow after
-review. Never copy personal data back to the shared source. Do not auto-commit,
-change Git identity, configure remotes or push without explicit authorization.
+review. Never copy personal data back to the shared source.
+
+Agents automatically commit validated checkpoints in this workspace and
+dev-workflow, not every save. Task code repositories require diff/check review
+and commit approval. Pushes, Git identity/remotes and history rewrites still
+need explicit requests. See workspace conventions' Commit checkpoints section
+for scope, staging and coordination safeguards.

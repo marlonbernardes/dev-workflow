@@ -1,5 +1,5 @@
 ---
-name: start-task
+name: task-start
 description: Move an existing Markdown task to in-progress safely and reconcile its project dashboard with actual files.
 ---
 # Start task
@@ -18,4 +18,5 @@ ask for its root if invoked in the shared source repository.
    failures instead of leaving directory and frontmatter inconsistent.
 5. Rescan task directories, reconcile dashboard counts/links, check moved-file
    links and verify exactly one copy. An already in-progress task is not moved
-   again. Do not mark anything done or auto-commit.
+   again. Do not mark anything done. Checkpoint validated changes under the
+   workspace commit policy.

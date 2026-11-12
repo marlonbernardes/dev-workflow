@@ -5,6 +5,7 @@ id: TEMPLATE-002
 title: Verify project note navigation
 project: _template
 status: backlog
+assignee: null
 created: "{{date}}"
 updated: "{{date}}"
 tags: [task, example]

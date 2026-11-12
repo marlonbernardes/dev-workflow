@@ -5,6 +5,7 @@ id: TEMPLATE-001
 title: Review the proposed project workflow
 project: _template
 status: backlog
+assignee: null
 created: "{{date}}"
 updated: "{{date}}"
 tags: [task, example, needs-human]

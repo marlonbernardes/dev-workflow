@@ -16,5 +16,5 @@ system date. Ask for its location if invoked in the shared source repo.
    Preserve human text and avoid repeated entries.
 4. Add real task/note links, outstanding blockers and a clearly proposed next
    step. Do not create unrelated wiki notes or change task status.
-5. Verify the local date and resulting log, report missing evidence, and do
-   not auto-commit or publish.
+5. Verify the local date and resulting log, report missing evidence, and
+   checkpoint changed files under the workspace commit policy. Do not publish.

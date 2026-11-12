@@ -1,5 +1,5 @@
 ---
-name: new-task
+name: task-new
 description: Create a backlog task with a globally unique project-qualified ID and observable acceptance criteria.
 ---
 # New task
@@ -18,10 +18,16 @@ shared dev-workflow repository.
 3. Use the project's existing ID prefix or ask for one. Allocate an unused
    project-qualified ID; verify the exact filename does not already exist.
 4. Create one stable `<ID>-<slug>.md` in the project's `tasks/backlog`.
-   Set type: task, task_type, id, title, project, status, local created/updated
-   dates and tags. Use a needs-human tag for required human involvement.
+   Set type: task, task_type, id, title, project, status, assignee, local
+   created/updated dates and tags. Use `assignee: me` for the owner, an existing
+   `.claude/agents/<name>.md` filename stem for an approved agent assignment,
+   or `assignee: null` if unassigned. Check any profile `name` agrees; ask about
+   unknown names rather than inventing profiles. Preserve assignments already
+   confirmed during `/project-plan`. Assignment does not start work.
+   Use a needs-human tag for required human involvement.
 5. Preserve every required section. Write actionable unchecked acceptance
    criteria, confirmed context, actual related links and feasible next steps.
    Verification starts as not yet verified.
 6. Rescan task directories, update dashboard counts and the task link without
-   replacing human strategy, then verify metadata and ID uniqueness. Do not commit.
+   replacing human strategy, then verify metadata and ID uniqueness. Checkpoint
+   task/dashboard changes together under the workspace commit policy.

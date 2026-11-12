@@ -5,6 +5,27 @@ import { fileURLToPath } from "node:url";
 
 const executable = (name) => process.platform === "win32" ? `${name}.exe` : name;
 
+function harnessName(value = process.env.AI_HARNESS ?? "copilot") {
+  if (!["copilot", "claude"].includes(value)) throw new Error("Harness must be copilot or claude.");
+  return value;
+}
+
+async function projectSkills(root) {
+  const skills = [];
+  for (const entry of await readdir(path.join(root, ".claude", "skills"), { withFileTypes: true })) {
+    if (!entry.isDirectory() || entry.isSymbolicLink()) continue;
+    const file = path.join(root, ".claude", "skills", entry.name, "SKILL.md");
+    const info = await lstat(file);
+    if (!info.isFile() || info.isSymbolicLink()) throw new Error(`Unsafe skill: ${entry.name}`);
+    const content = await readFile(file, "utf8");
+    const name = content.match(/^name: (.+)\r?$/m)?.[1];
+    const description = content.match(/^description: (.+)\r?$/m)?.[1];
+    if (name !== entry.name || !description) throw new Error(`Invalid skill metadata: ${entry.name}`);
+    skills.push({ name, description });
+  }
+  return skills.sort((a, b) => a.name.localeCompare(b.name));
+}
+
 function run(program, args, cwd) {
   const result = spawnSync(executable(program), args, {
     cwd, encoding: "utf8", shell: false, windowsHide: true, timeout: 120_000,
@@ -208,14 +229,20 @@ notes as needed; report missing or ambiguous links instead of inventing content.
 Read the dashboard and actual tasks in all four status directories. Summarize the
 objective, scope, priorities, next milestone, blockers and evidence-based task counts.
 Flag stale dashboard counts, missing metadata and unverified acceptance criteria.
-Propose a short next-action list; distinguish proposals from approved decisions.
+Read task assignees and actual .claude/agents profiles. Select ready tasks and
+propose assignments or missing roles, dependencies and verification expectations.
+Distinguish proposals from approved decisions; assignment is not dispatch approval.
+Propose a short next-action list. After approved dispatches, reconcile factual
+task/dashboard status from worker reports and acceptance evidence.
 Keep coordination scoped to this project. Shared repository references are under
 resources/repositories; reusable knowledge is under wiki.
 Available project skills (discovered, not assumed):
 ${skills.map((skill) => `/${skill.name}: ${skill.description}`).join("\n")}
 Explain the relevant skills to the user. For now, inspect and report only:
 do not edit files, implement tasks, mark work done or launch agents/subagents.
-Do not install tools, change Git identity/remotes, commit or push without explicit approval.
+Read-only inspection creates no commit. Later authorized workspace changes follow its commit policy.
+Task code commits require human review/approval of the proposed diff, checks and commit.
+Do not install tools, change Git identity/remotes or push without explicit approval.
 Preserve existing work and normal permission prompts. Never bypass trust dialogs.`;
 }
 
@@ -249,7 +276,8 @@ export function editorArgv(project, tab, pane, firstTab = false) {
   return [executable("nvim"), "-c", command, "--", ...(file ? [file] : [])];
 }
 
-export async function loadProject({ workspace, name, apply = false, runCommand = run }) {
+export async function loadProject({ workspace, name, apply = false, harness = harnessName(), runCommand = run }) {
+  harnessName(harness);
   const project = await resolveProject(workspace, name);
   let current = layout(runCommand, project.root);
   const existing = existingSpace(current.spaces, project);
@@ -259,10 +287,22 @@ export async function loadProject({ workspace, name, apply = false, runCommand =
   };
   const state = await parseWorkspaceState(project);
   const context = await resolveContext(project, state.context);
-  const skills = json(runCommand, "copilot", ["skill", "list", "--json"], project.root);
-  if (!Array.isArray(skills)) throw new Error("Copilot did not return a skill list.");
-  const prompt = coordinatorPrompt(project, skills.filter((skill) => skill.source === "project" && skill.enabled), context);
-  const plan = { project: project.slug, spaceName: project.slug, folder: project.root, state, context, prompt };
+  const agentParts = [".claude", "agents", "coordinator.md"];
+  for (let index = 0; index < agentParts.length; index++) {
+    const file = path.join(project.root, ...agentParts.slice(0, index + 1));
+    const stat = await lstat(file);
+    if (stat.isSymbolicLink() || (index === agentParts.length - 1 ? !stat.isFile() : !stat.isDirectory())) {
+      throw new Error("Deploy a real .claude/agents/coordinator.md profile before loading.");
+    }
+  }
+  const skills = harness === "copilot"
+    ? json(runCommand, "copilot", ["skill", "list", "--json"], project.root)
+    : await projectSkills(project.root);
+  if (!Array.isArray(skills)) throw new Error(`${harness} did not return a skill list.`);
+  const available = harness === "copilot"
+    ? skills.filter((skill) => skill.source === "project" && skill.enabled) : skills;
+  const prompt = coordinatorPrompt(project, available, context);
+  const plan = { project: project.slug, spaceName: project.slug, folder: project.root, harness, agent: "coordinator", state, context, prompt };
   if (!apply) return { status: "preview", ...plan };
 
   const commands = json(runCommand, "herdr-app", ["commands"], project.root);
@@ -277,7 +317,7 @@ export async function loadProject({ workspace, name, apply = false, runCommand =
       throw new Error(`Installed Herdr lacks the required ${command} arguments.`);
     }
   }
-  runCommand("copilot", ["--help"], project.root);
+  runCommand(harness, ["--help"], project.root);
   runCommand("nvim", ["--version"], project.root);
   runCommand("hc", ["--version"], project.root);
   current = layout(runCommand, project.root);
@@ -288,7 +328,8 @@ export async function loadProject({ workspace, name, apply = false, runCommand =
   const terminals = [];
   let space;
   const argv = (pane, tab, firstTab) => pane.role === "coordinator"
-    ? [executable("copilot"), "--name", `${project.title} coordinator`, "--interactive", prompt]
+    ? [executable(harness), "--agent", "coordinator", "--name", `${project.title} coordinator`,
+      ...(harness === "copilot" ? ["--interactive", prompt] : [prompt])]
     : pane.role === "editor" ? editorArgv(project, tab, pane, firstTab) : undefined;
   function action(command, args) {
     const result = json(runCommand, "herdr-app", ["do", command, JSON.stringify(args)], project.root);
@@ -327,7 +368,7 @@ export async function loadProject({ workspace, name, apply = false, runCommand =
       const app = info.status?.app ?? info.foreground?.name ?? "";
       const ready = info.state === "live" && info.status?.state !== "error" &&
         info.status?.state !== "blocked" &&
-        (terminal.role === "shell" || (terminal.role === "coordinator" ? /copilot/i : /nvim/i).test(app));
+        (terminal.role === "shell" || (terminal.role === "coordinator" ? new RegExp(harness, "i") : /nvim/i).test(app));
       return { ...terminal, verified: ready, state: info.state, app };
     });
     const status = json(runCommand, "herdr-app", ["status"], project.root);
@@ -347,11 +388,11 @@ export async function main(args = process.argv.slice(2)) {
     for (let i = 0; i < args.length; i++) {
       const arg = args[i];
       if (arg === "--apply" && options.apply === undefined) options.apply = true;
-      else if (["--workspace", "--project"].includes(arg) && !options[arg] && args[i + 1] && !args[i + 1].startsWith("--")) {
+      else if (["--workspace", "--project", "--harness"].includes(arg) && !options[arg] && args[i + 1] && !args[i + 1].startsWith("--")) {
         options[arg] = args[++i];
-      } else throw new Error("Usage: project-load.mjs --workspace <folder> --project <name> [--apply]");
+      } else throw new Error("Usage: project-load.mjs --workspace <folder> --project <name> [--harness copilot|claude] [--apply]");
     }
-    const result = await loadProject({ workspace: options["--workspace"], name: options["--project"], apply: options.apply });
+    const result = await loadProject({ workspace: options["--workspace"], name: options["--project"], apply: options.apply, harness: options["--harness"] });
     console.log(JSON.stringify(result, null, 2));
     return result.status === "needs-verification" ? 2 : 0;
   } catch (error) {
