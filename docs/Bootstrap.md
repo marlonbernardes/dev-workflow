@@ -27,13 +27,16 @@ cannot bootstrap its own unavailable runtime. The agent can handle later steps.
 
 ## 2. Install only missing approved tools
 
-Ask before installation and elevation. The verified Windows package commands are:
+Ask before installation and elevation. The Windows package commands are:
 
 ```powershell
 winget install --id Git.Git --exact --source winget
 winget install --id Neovim.Neovim --exact --source winget --scope machine
 winget install --id BurntSushi.ripgrep.MSVC --exact --source winget --scope user
+winget install --id Microsoft.PowerToys --source winget
 ```
+
+PowerToys is optional; install it only when requested.
 
 The Neovim installer may require administrator approval. Reopen terminals to
 refresh PATH and verify `git --version` and `nvim --version`. Require Neovim 0.12
