@@ -80,4 +80,7 @@ initial/all-files commits, staged-only/partial staging, literal filenames,
 renames/deletions, ignored files, secrets outside diff context, dry runs,
 concurrent edits/staging, AI failures and rejecting hooks. AI output is stubbed.
 Adapter tests cover both CLI contracts without consuming credits. Live Claude
-and macOS execution require separate machine checks.
+and macOS execution require separate machine checks. A Windows smoke check
+through the registered `aic` command verified a real Copilot-generated commit
+in a synthetic repository, including preservation of an untracked file outside
+the staged scope. That exact fixture was removed afterward.

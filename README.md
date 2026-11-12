@@ -197,6 +197,9 @@ require an actual machine and approved repository destinations. No bootstrap
 script, remote configuration or push is performed by this repo. Agents make local
 checkpoint commits according to the policy above.
 
-For the Note utility, run `npm test`. A synthetic Windows end-to-end check also
+For the Node utilities and project loader, run `npm test`. A synthetic Windows end-to-end check also
 verified real Copilot generation, feedback, relocation and acceptance. macOS
-execution and a fresh-machine bootstrap have not been tested.
+execution and a fresh-machine bootstrap have not been tested. The registered
+`aic` command also passed a real-Copilot Windows smoke check in a synthetic Git
+repository. Claude adapter/launcher contracts are tested without launching
+Claude; live Claude behavior is unverified on this machine.
