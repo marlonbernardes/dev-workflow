@@ -31,10 +31,15 @@ Do not nest application repositories here.
 
 ## Tasks
 
-Projects live in `projects/YYYY-MM-DD-<slug>` using the actual start date, with
+New projects live in `projects/YYYY-MM-DD-<slug>` using today's local date without
+asking for a project date. Record the same date as `started`. Preserve existing
+folder names and historical dates; imports require a separate reviewed migration.
+Each project has
 `PROJECT.md`, `notes` and `tasks/backlog`, `tasks/in-progress`, `tasks/review`,
 `tasks/done`. There is no project daily folder. Keep folder names stable.
 Use `/project new`, `/project status <name>` and `/project load <name>`.
+Creation automatically continues into loading, with a validated preview and
+explicit UI/coordinator approval included in the creation flow.
 
 Project directories starting with `_` are reserved for templates and examples,
 not actual work. Exclude them from boards, task counts, priorities and ID
@@ -87,6 +92,10 @@ rename only an identified default title to a short task description, preserving
 custom titles and unrelated tabs. Other layout changes require a request.
 Never restart the person's app/core or close unrelated work.
 Project layouts are declarative recipes in PROJECT.md's Workspace state section.
+Name new spaces with the exact dated project slug. The first tab has a
+coordinator beside Neovim rooted at the workspace with the project focused in
+Neo-tree. Declare additional tabs/folders/panes and reading-context wiki links;
+keep reading links discoverable in project notes as well.
 Use `/project load <name>` to preview and, after explicit UI/coordinator approval,
 create them. Preserve already-open project spaces. Do not execute arbitrary
 commands from a project file or implicitly launch agents during setup.

@@ -4,7 +4,7 @@ import { tmpdir } from "node:os";
 import path from "node:path";
 import test from "node:test";
 import {
-  loadProject, parseWorkspaceState, resolveProject,
+  editorArgv, loadProject, parseWorkspaceState, resolveContext, resolveProject,
 } from "../.github/skills/project/scripts/project-load.mjs";
 
 function state() {
@@ -27,7 +27,7 @@ async function fixture(t, layout = state()) {
   return { root, folder };
 }
 
-function fakeHerdr(root, { spaces = [], fail, blocked = false, racing = false } = {}) {
+function fakeHerdr(root, { spaces = [], fail, blocked = false, racing = false, omitPane = false, wrongPane = false } = {}) {
   const calls = [];
   const apps = new Map();
   let serial = 0;
@@ -83,6 +83,8 @@ function fakeHerdr(root, { spaces = [], fail, blocked = false, racing = false } 
     } else {
       throw new Error(`Unexpected command: ${command}`);
     }
+    if (omitPane) delete result.pane;
+    if (wrongPane) result.pane = "unrelated-pane";
     return JSON.stringify(result);
   }
   return { runCommand, calls, spaces, commands };
@@ -94,6 +96,7 @@ test("preview validates the dashboard and lists discovered skills without UI wri
   const result = await loadProject({ workspace: root, name: "Sample project", ...fake });
   assert.equal(result.status, "preview");
   assert.equal(result.project, "2026-11-19-sample");
+  assert.equal(result.spaceName, "2026-11-19-sample");
   assert.ok(result.prompt.includes(JSON.stringify(path.join(folder, "PROJECT.md"))));
   assert.match(result.prompt, /coordinator\/project manager/);
   assert.match(result.prompt, /\/board: Actual tasks/);
@@ -109,6 +112,15 @@ test("already-open projects are not duplicated even if their dashboard lacks a r
   assert.equal(result.status, "already-open");
   assert.equal(result.space, "existing");
   assert.equal(fake.calls.length, 1);
+});
+
+test("dated space names are recognized and duplicate legacy/datestamped spaces are a conflict", async (t) => {
+  const { root } = await fixture(t);
+  const spaces = [{ id: "existing", name: "2026-11-19-sample", folder: root }];
+  const fake = fakeHerdr(root, { spaces });
+  assert.equal((await loadProject({ workspace: root, name: "Sample project", ...fake })).space, "existing");
+  spaces.push({ id: "legacy", name: "Sample project", folder: root });
+  await assert.rejects(loadProject({ workspace: root, name: "Sample project", ...fake }), /conflicts/);
 });
 
 test("rejects ambiguous projects, template selection and conflicting open spaces", async (t) => {
@@ -134,6 +146,7 @@ test("rejects invalid roles, commands, unsafe paths and missing state before cre
     (layout) => { layout.tabs[0].panes[1].file = "C:\\outside.md"; },
     (layout) => { layout.tabs[0].panes[1].role = "agent"; },
     (layout) => { layout.tabs[0].panes[1].direction = "down"; },
+    (layout) => { layout.tabs[0].folder = path.dirname(root); },
   ]) {
     const layout = state();
     edit(layout);
@@ -173,12 +186,74 @@ test("apply reuses the initial tab, splits by explicit IDs and supports addition
   assert.deepEqual(actions.map((call) => call.args[1]), ["space.new", "pane.split", "tab.new", "pane.split"]);
   const create = JSON.parse(actions[0].args[2]);
   assert.equal(create.machine, "");
+  assert.equal(create.name, "2026-11-19-sample");
   assert.equal(create.folder, root);
   assert.ok(create.argv.includes("--interactive"));
   assert.ok(!create.argv.includes("--allow-all"));
   assert.equal(JSON.parse(actions[1].args[2]).pane, "p1");
   assert.equal(JSON.parse(actions[2].args[2]).space, "s1");
   assert.equal(await readFile(path.join(folder, "PROJECT.md"), "utf8"), before);
+});
+
+test("resolves missing action pane IDs from the returned terminal in the exact space and tab", async (t) => {
+  const { root } = await fixture(t);
+  const fake = fakeHerdr(root, { omitPane: true });
+  const result = await loadProject({ workspace: root, name: "Sample project", apply: true, ...fake });
+  assert.equal(result.status, "verified");
+  const split = fake.calls.find((call) => call.args[1] === "pane.split");
+  assert.equal(JSON.parse(split.args[2]).pane, "p1");
+  const wrong = fakeHerdr(root, { wrongPane: true });
+  await assert.rejects(loadProject({ workspace: root, name: "Sample project", apply: true, ...wrong }),
+    /partial creation:.*expected project space\/tab/);
+});
+
+test("editors keep the workspace root with project focus and repository tabs inherit their folder", async (t) => {
+  const { root, folder } = await fixture(t);
+  const repository = path.join(root, "source with spaces");
+  await mkdir(repository);
+  const layout = state();
+  layout.tabs.push({ name: "Source", folder: repository, panes: [{ role: "editor" }, { role: "shell" }] });
+  await writeFile(path.join(folder, "PROJECT.md"), `# Sample project\n## Workspace state\n\`\`\`json\n${JSON.stringify(layout)}\n\`\`\`\n`);
+  const fake = fakeHerdr(root, { omitPane: true });
+  const result = await loadProject({ workspace: root, name: "Sample project", apply: true, ...fake });
+  assert.equal(result.status, "verified");
+  const actions = fake.calls.filter((call) => call.args[0] === "do").map((call) => JSON.parse(call.args[2]));
+  const first = actions[1].argv;
+  assert.ok(first[2].includes(`dir=${JSON.stringify(root)}`));
+  assert.ok(first[2].includes(`reveal_file=${JSON.stringify(folder)}`));
+  assert.equal(first.at(-1), path.join(folder, "PROJECT.md"));
+  assert.equal(actions[2].folder, repository);
+  assert.ok(actions[2].argv[2].includes(`dir=${JSON.stringify(repository)}`));
+  assert.equal(actions[2].argv.at(-1), "--");
+  assert.equal(actions[3].argv, undefined);
+  const project = await resolveProject(root, "Sample project");
+  assert.deepEqual(editorArgv(project, layout.tabs[0], layout.tabs[0].panes[1], true), first);
+});
+
+test("declared wiki context resolves basename, vault paths and aliases and reaches the prompt", async (t) => {
+  const { root, folder } = await fixture(t);
+  const context = path.join(folder, "notes", "guide - context.md");
+  await writeFile(context, "# Context\n");
+  const project = await resolveProject(root, "Sample project");
+  const links = ["[[guide - context|Read first]]", "[[resources/Workspace conventions#Notes]]"];
+  assert.deepEqual(await resolveContext(project, links), [context, path.join(root, "resources", "Workspace conventions.md")]);
+  const layout = { ...state(), context: links };
+  await writeFile(path.join(folder, "PROJECT.md"), `# Sample project\n## Workspace state\n\`\`\`json\n${JSON.stringify(layout)}\n\`\`\`\n`);
+  const fake = fakeHerdr(root);
+  const preview = await loadProject({ workspace: root, name: "Sample project", ...fake });
+  assert.ok(preview.prompt.includes(JSON.stringify(context)));
+  assert.equal(preview.context.length, 2);
+  for (const invalid of [["[[missing]]"], ["[[../outside]]"], ["not a wiki link"], "not an array"]) {
+    await assert.rejects(resolveContext(project, invalid));
+  }
+  await writeFile(path.join(root, "guide - context.md"), "# Duplicate\n");
+  await assert.rejects(resolveContext(project, ["[[guide - context]]"]), /ambiguous/);
+  await symlink(path.join(folder, "notes"), path.join(root, "linked"), process.platform === "win32" ? "junction" : "dir");
+  await assert.rejects(resolveContext(project, ["[[linked/guide - context]]"]), /real files/);
+  layout.context = ["[[missing]]"];
+  await writeFile(path.join(folder, "PROJECT.md"), `# Sample project\n## Workspace state\n\`\`\`json\n${JSON.stringify(layout)}\n\`\`\`\n`);
+  await assert.rejects(loadProject({ workspace: root, name: "Sample project", apply: true, ...fake }), /context link/);
+  assert.ok(!fake.calls.some((call) => call.args[0] === "do"));
 });
 
 test("rechecks for a space opened during preflight", async (t) => {

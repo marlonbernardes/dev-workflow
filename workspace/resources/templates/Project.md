@@ -1,7 +1,7 @@
 ---
 type: project
 project: "{{project}}"
-started: "{{start_date}}"
+started: "{{date}}"
 created: "{{date}}"
 updated: "{{date}}"
 tags: [project]
@@ -34,11 +34,15 @@ Not configured.
 
 Desired layout, not saved process state. `/project load` previews this recipe
 and requires approval before creating a space or starting its coordinator.
-Editor paths are relative to this project; all terminals start in the workspace.
+Creation automatically includes that load flow. The space uses the dated project
+slug. The first editor keeps the workspace root with this project focused in
+Neo-tree. Add reading-context wiki links (also linked in project notes) and
+approved additional tabs/folders/panes as needed.
 
 ```json
 {
   "version": 1,
+  "context": [],
   "tabs": [
     {
       "name": "Project",

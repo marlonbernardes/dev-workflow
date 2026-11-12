@@ -57,16 +57,27 @@ In an existing Copilot session use `/skills reload` after deployment.
 ## Manage and load projects
 
 Use `/project new`, `/project status <name>` or `/project load <name>`.
-New project folders use their actual start date: `YYYY-MM-DD-project-name`.
+New project folders use today's local date without a date question:
+`YYYY-MM-DD-project-name`. Existing names and historical dates stay unchanged.
 Each has a dashboard, one `notes` folder and four task-state folders.
 Task and note types are defined in the workspace conventions.
 
-The dashboard's `Workspace state` section describes its Herdr tabs and panes.
+The dashboard's `Workspace state` section describes its Herdr tabs, folders,
+panes and additional wiki-linked reading documents. Keep those links in project
+notes as well. `/project new` automatically continues into loading, including
+the validated preview and UI/coordinator approval in the creation flow.
 Loading checks for an already-open project space first. Otherwise, after review
-and explicit approval, the bundled Node.js script creates a project space with
-an interactive Copilot coordinator beside Neovim opening `PROJECT.md`.
-Additional declared editor/shell panes are supported; arbitrary stored commands
-are not. Existing work is preserved. No live UI is loaded during setup or tests.
+and explicit approval, the bundled Node.js script creates a space named with the
+exact dated project slug. Its first tab pairs an interactive Copilot coordinator
+with Neovim: the tree stays rooted at the private workspace, focused on the
+project folder, with `PROJECT.md` open. Additional declared editor/shell tabs can
+use a separate source checkout folder; arbitrary stored commands are not supported.
+Existing spaces, including legacy title-named or partial spaces, are preserved.
+No live UI is loaded during setup or tests.
+
+The coordinator prompt lives in `coordinatorPrompt()` in the project skill's
+`scripts/project-load.mjs`. It includes resolved reading context and discovered
+skills, and initially permits inspection/reporting only.
 
 See the [project skill](.github/skills/project/SKILL.md) and its
 [layout schema](.github/skills/project/references/Project-workspace.md).

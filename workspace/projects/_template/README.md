@@ -2,12 +2,13 @@
 
 This is a synthetic reference, not a project to start or complete.
 
-1. Choose a unique project slug without a leading underscore, confirm its actual
-   start date and choose an unused project-qualified task ID prefix.
+1. Choose a unique project slug without a leading underscore and an unused
+   project-qualified task ID prefix. New projects use today's local date without
+   asking; historical imports require a separate reviewed migration.
 2. Use `/project new` to create `YYYY-MM-DD-<slug>` and its dashboard from
    `resources/templates/Project.md`, or copy this folder's structure manually
    without overwriting existing files.
-3. Replace `_template`, `TEMPLATE`, `{{date}}`, `{{start_date}}`, titles and example text with
+3. Replace `_template`, `TEMPLATE`, `{{date}}`, titles and example text with
    confirmed values. Use local ISO dates, not the dates of a copied example.
 4. Create only real tasks from `resources/templates/Task.md`. Leave the sample
    tasks here; do not carry them into the real backlog.
@@ -19,4 +20,5 @@ The four task directories are the board. The three empty statuses contain
 investigations and prompts share `notes`, with note-type filename prefixes.
 There is no project daily folder; use the workspace-wide daily log.
 The dashboard's Workspace state describes loadable Herdr tabs and panes.
+Creation continues into a load preview and UI/coordinator approval.
 Reusable conclusions can become linked notes under the workspace's `wiki` folder.

@@ -1,7 +1,7 @@
 ---
 type: project
 project: _template
-started: "{{start_date}}"
+started: "{{date}}"
 created: "{{date}}"
 updated: "{{date}}"
 tags: [project, example]
@@ -60,11 +60,15 @@ Repository references belong in `resources/repositories/<repository>`.
 ## Workspace state
 
 Synthetic desired layout only. Real project folders use `YYYY-MM-DD-<slug>`.
-`/project load` requires preview and approval before any UI or agent launch.
+Creation uses today's local date without asking and continues into loading,
+with preview and UI/coordinator approval. The space uses the dated folder slug;
+the first Neovim tree stays rooted at the workspace and focuses the project.
+Declare reading-context wiki links and any additional tabs/folders/panes here.
 
 ```json
 {
   "version": 1,
+  "context": [],
   "tabs": [
     {
       "name": "Project",

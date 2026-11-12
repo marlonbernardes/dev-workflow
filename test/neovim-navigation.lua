@@ -4,6 +4,8 @@ local config = vim.env.NVIM_TEST_CONFIG
 local root = vim.fn.tempname()
 local vault = vim.fs.joinpath(root, "vault")
 vim.fn.mkdir(vim.fs.joinpath(vault, "notes"), "p")
+local project = vim.fs.joinpath(vault, "projects", "2026-11-19-sample project")
+vim.fn.mkdir(project, "p")
 vim.env.NOTE_WORKSPACE = vault
 
 local function path(name)
@@ -25,9 +27,11 @@ local original = {
 }
 vim.fn.writefile(original, path("Start.md"))
 vim.fn.writefile({ "# Target Note", "", "## Details", "", "Content." }, path("notes/Target Note.md"))
+vim.fn.writefile({ "# Sample project" }, vim.fs.joinpath(project, "PROJECT.md"))
 vim.fn.writefile({ "# Outside the vault" }, vim.fs.joinpath(root, "outside.md"))
 
 local ok, err = xpcall(function()
+  vim.cmd.runtime("plugin/netrwPlugin.vim")
   vim.cmd("filetype plugin indent on")
   dofile(config)
   assert(vim.v.errmsg == "", vim.v.errmsg)
@@ -84,6 +88,18 @@ local ok, err = xpcall(function()
 
   vim.cmd.edit(vim.fn.fnameescape(vim.fs.joinpath(root, "outside.md")))
   assert(vim.fn.maparg("<CR>", "n") == "", "Obsidian Enter mapping leaked outside vault")
+
+  vim.cmd.cd(vim.fn.fnameescape(vault))
+  vim.cmd.edit(vim.fn.fnameescape(vim.fs.joinpath(project, "PROJECT.md")))
+  require("neo-tree.command").execute({ action = "focus", dir = vault, reveal_file = project })
+  assert(vim.wait(10000, function()
+    local state = require("neo-tree.sources.manager").get_state("filesystem")
+    local node = state.tree and state.tree:get_node()
+    return node and vim.fs.normalize(node:get_id()) == vim.fs.normalize(project)
+  end), "Neo-tree did not focus the project folder")
+  local tree = require("neo-tree.sources.manager").get_state("filesystem")
+  assert(vim.fs.normalize(tree.path) == vim.fs.normalize(vault), "Neo-tree root changed to the project")
+  assert(vim.fs.normalize(vim.fn.getcwd()) == vim.fs.normalize(vault), "Neovim changed the workspace directory")
   assert(vim.v.errmsg == "", vim.v.errmsg)
 end, debug.traceback)
 
@@ -92,6 +108,6 @@ if not ok then
   vim.api.nvim_err_writeln(err)
   vim.cmd("cquit 1")
 else
-  print("PASS: Enter follows basename/aliased/heading links; Ctrl+o returns; metadata preserved; missing link cancellation safe; mappings vault-local")
+  print("PASS: wiki navigation and metadata preserved; project focused in Neo-tree with workspace root and cwd unchanged")
   vim.cmd("qa!")
 end

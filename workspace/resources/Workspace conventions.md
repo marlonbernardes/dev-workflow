@@ -23,9 +23,10 @@ existing note when possible and do not invent related links.
 
 ## Project layout
 
-Real project folders are `projects/YYYY-MM-DD-<slug>`, using the actual start
-date, also recorded in dashboard frontmatter as `started`. Do not invent dates
-for imported projects; confirm before migration. Keep the dated name stable.
+New project folders are `projects/YYYY-MM-DD-<slug>`, using the current local
+calendar date without asking for a date, also recorded as `started`.
+Do not invent historical dates for imported projects; confirm before migration.
+Keep existing dated folder names stable.
 Each project has `PROJECT.md`, `notes` and the four task-state directories.
 Use the workspace-wide `daily` folder, not project daily logs.
 
@@ -41,6 +42,13 @@ Use `/project new`, `/project status <name>` or `/project load <name>`.
 The dashboard's Workspace state describes desired tabs and panes, not process
 history. Loading an existing space must not duplicate it; creating a new layout
 or coordinator requires a preview and approval.
+Creation automatically continues into loading; include approval for the visible
+layout and credit-consuming coordinator in that flow, then load immediately.
+New Herdr spaces use the exact dated folder slug. The first tab pairs the
+coordinator with Neovim rooted at the workspace, focusing the project in Neo-tree.
+Declare additional tabs, checkout folders and panes in Workspace state.
+Declare additional reading documents there as wiki links and link them in
+project notes. Missing or ambiguous context links must be resolved, not guessed.
 
 ## Note types
 
