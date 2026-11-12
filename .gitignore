@@ -1,0 +1,17 @@
+.local/
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.pfx
+*.p12
+credentials.json
+secrets.*
+*.swp
+*.tmp
+*.log
+.DS_Store
+Thumbs.db
+desktop.ini
+node_modules/
